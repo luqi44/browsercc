@@ -1,0 +1,39 @@
+name: Build browsercc
+on:
+  workflow_dispatch:  # 允许网页手动点击运行
+  # push:
+  #   branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y git ninja-build cmake curl
+
+      - name: Install Emscripten
+        run: |
+          git clone https://github.com/emscripten-core/emsdk.git
+          cd emsdk
+          ./emsdk install 3.1.73
+          ./emsdk activate 3.1.73
+          source ./emsdk_env.sh
+          echo "$PWD" >> $GITHUB_ENV
+
+      - name: Run build.sh
+        run: |
+          source emsdk/emsdk_env.sh
+          chmod +x ./build.sh
+          ./build.sh
+
+      - name: Upload dist artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: browsercc-dist
+          path: dist/
