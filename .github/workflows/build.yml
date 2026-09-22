@@ -1,8 +1,6 @@
 name: Build browsercc
 on:
-  workflow_dispatch:  # 允许网页手动点击运行
-  # push:
-  #   branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -17,22 +15,27 @@ jobs:
           sudo apt update
           sudo apt install -y git ninja-build cmake curl
 
-      - name: Install Emscripten
+      - name: Increase swap memory
+        run: |
+          sudo fallocate -l 8G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+
+      - name: Install Emscripten SDK
         run: |
           git clone https://github.com/emscripten-core/emsdk.git
           cd emsdk
           ./emsdk install 3.1.73
           ./emsdk activate 3.1.73
-          source ./emsdk_env.sh
-          echo "$PWD" >> $GITHUB_ENV
 
-      - name: Run build.sh
+      - name: Run browsercc build.sh
         run: |
-          source emsdk/emsdk_env.sh
+          source ./emsdk/emsdk_env.sh
           chmod +x ./build.sh
           ./build.sh
 
-      - name: Upload dist artifacts
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: browsercc-dist
